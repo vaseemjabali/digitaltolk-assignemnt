@@ -35,7 +35,7 @@ Conclusion
 - update
 - immediateJobEmail
 3) I'm not assuring that it's 100% refactored, because it requires more time. However I have given few glimpses of how can we improve it.
-4) Regarding my rating for the original code, I'll rate it under terrible category. Because there are some basic mistakes.
+4) Regarding my rating for the original code, I'll rate it under terrible category. The reasons are mentioned above also there are some basic mistakes which shouldn't be happen at development level.
 
 
 
