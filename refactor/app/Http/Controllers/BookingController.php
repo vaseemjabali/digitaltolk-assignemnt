@@ -5,8 +5,11 @@ namespace DTApi\Http\Controllers;
 use DTApi\Models\Job;
 use DTApi\Http\Requests;
 use DTApi\Models\Distance;
+use App\Constants\Constants;
 use Illuminate\Http\Request;
+use App\Traits\ResponseTrait;
 use DTApi\Repository\BookingRepository;
+use App\Http\Requests\Admin\Subscription\AddBookingRequest;
 
 /**
  * Class BookingController
@@ -14,7 +17,7 @@ use DTApi\Repository\BookingRepository;
  */
 class BookingController extends Controller
 {
-
+    use ResponseTrait;
     /**
      * @var BookingRepository
      */
@@ -35,17 +38,11 @@ class BookingController extends Controller
      */
     public function index(Request $request)
     {
-        if($user_id = $request->get('user_id')) {
-
-            $response = $this->repository->getUsersJobs($user_id);
-
+        $userId = $request->get('user_id');
+        if(!empty($userId)) {
+            return $this->successResponse('User Details fetched', $this->repository->getUsersJobs($userId));
         }
-        elseif($request->__authenticatedUser->user_type == env('ADMIN_ROLE_ID') || $request->__authenticatedUser->user_type == env('SUPERADMIN_ROLE_ID'))
-        {
-            $response = $this->repository->getAll($request);
-        }
-
-        return response($response);
+        return $this->successResponse('Data fetched', $this->repository->getAll($request));
     }
 
     /**
@@ -54,23 +51,20 @@ class BookingController extends Controller
      */
     public function show($id)
     {
-        $job = $this->repository->with('translatorJobRel.user')->find($id);
-
-        return response($job);
+        return $this->successResponse('Details fetched', $this->repository->with('translatorJobRel.user')->find($id));
     }
 
     /**
      * @param Request $request
      * @return mixed
      */
-    public function store(Request $request)
+    public function store(AddBookingRequest $request)
     {
-        $data = $request->all();
-
-        $response = $this->repository->store($request->__authenticatedUser, $data);
-
-        return response($response);
-
+        $response = $this->repository->store($request->__authenticatedUser, $request->all());
+        if($response['status'] == Constants::SUCCESS){
+            return $this->successResponse($response['message'], $response['data']);
+        }
+        return $this->failureResponse($response['message'], null);
     }
 
     /**
@@ -82,9 +76,8 @@ class BookingController extends Controller
     {
         $data = $request->all();
         $cuser = $request->__authenticatedUser;
-        $response = $this->repository->updateJob($id, array_except($data, ['_token', 'submit']), $cuser);
-
-        return response($response);
+        $this->repository->updateJob($id, array_except($data, ['_token', 'submit']), $cuser);
+        return $this->successResponse('Booking updated successfully', null);
     }
 
     /**
@@ -93,12 +86,11 @@ class BookingController extends Controller
      */
     public function immediateJobEmail(Request $request)
     {
-        $adminSenderEmail = config('app.adminemail');
-        $data = $request->all();
-
-        $response = $this->repository->storeJobEmail($data);
-
-        return response($response);
+        $response = $this->repository->storeJobEmail($request->all());
+        if($response['status'] == Constants::SUCCESS){
+            return $this->successResponse('Mail sent', $response['data']);
+        }
+        return $this->failureResponse('Some error occured while processing your request', null);
     }
 
     /**
